@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using DotnetServer.Models;
+using DotnetServer.Repositories;
 
 namespace DotnetServer.Controllers
 {
@@ -8,6 +9,14 @@ namespace DotnetServer.Controllers
     [Route("demo")]
     public class DemoAuthController : ControllerBase
     {
+        private readonly IAuthenticationRepository _authenticationRepository;
+
+        // Inject the repository via the constructor
+        public DemoAuthController(IAuthenticationRepository authenticationRepository)
+        {
+            _authenticationRepository = authenticationRepository;
+        }
+
         [HttpGet("getDemoToken")]
         public Task<AuthenticationTokenModel> GetDemoToken()
         {
@@ -15,12 +24,26 @@ namespace DotnetServer.Controllers
             var token = new AuthenticationTokenModel
             {
                 Id = 1,
-                Username = "demoUser",
-                UserId = 9999
+                Email = "demoUser@demo.com",
+                Name = "demoUser",
             };
 
             // Returning the demo token
             return Task.FromResult(token);
+        }
+
+        // Add this action to call GetUserByIdAsync
+        [HttpGet("getUser/{id}")]
+        public async Task<IActionResult> GetUser(int id)
+        {
+            var user = await _authenticationRepository.GetUserByIdAsync(id);
+
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            return Ok(user);
         }
     }
 }
