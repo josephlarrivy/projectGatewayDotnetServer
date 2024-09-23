@@ -45,5 +45,24 @@ namespace DotnetServer.Controllers
 
             return Ok(user);
         }
+
+        // demo setup to make Repo method route works
+        // this is not an actual route and will be removed
+        [HttpGet("testLoginCode/{email}")]
+        public async Task<IActionResult> TestLoginCode(string email)
+        {
+            // Call the GenerateAndReturnLoginCode method from your repository
+            var code = await _authenticationRepository.GenerateAndReturnLoginCode(email);
+
+            // If the code is null (e.g., email not found), return a NotFound result
+            if (code == null)
+            {
+                return NotFound(new { Message = "User not found or unable to generate login code." });
+            }
+
+            // Return the generated code as a JSON result
+            return Ok(code);
+        }
+
     }
 }
