@@ -39,4 +39,4 @@ CREATE TABLE LoginCodes (
 INSERT INTO users
     (Email, HashedPassword, Name)
     VALUES
-    ('user1@example.com','xxx', 'User One');
+    ('joseph.larrivy@gmail.com','xxx', 'User One');

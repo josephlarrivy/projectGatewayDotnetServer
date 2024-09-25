@@ -4,6 +4,7 @@ using Npgsql;
 using Dapper;
 using DotNetEnv;
 using DotnetServer.Repositories;
+using DotnetServer.Services;
 
 Env.Load();
 
@@ -13,14 +14,27 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Fetch environment variables for database configuration
 var host = Environment.GetEnvironmentVariable("DATABASE_HOST");
 var dbName = Environment.GetEnvironmentVariable("DATABASE_NAME");
-var user = Environment.GetEnvironmentVariable("DATABASE_USER");
-var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD");
+var dbUser = Environment.GetEnvironmentVariable("DATABASE_USER");
+var dbPassword = Environment.GetEnvironmentVariable("DATABASE_PASSWORD");
 
-var connectionString = $"Host={host};Database={dbName};Username={user};Password={password}";
-builder.Services.AddScoped<IAuthenticationRepository>(provider => new AuthenticationRepository(connectionString));
+// Fetch environment variables for SMTP configuration
+var smtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER");
+var smtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT"));
+var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER");
+var smtpPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
+var smtpFromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL");
 
+// Register EmailSender and pass configuration from .env
+builder.Services.AddScoped(provider =>
+    new EmailSender(smtpServer, smtpPort, smtpUser, smtpPassword, smtpFromEmail));
+
+// Register the AuthenticationRepository and inject the EmailSender
+var connectionString = $"Host={host};Database={dbName};Username={dbUser};Password={dbPassword}";
+builder.Services.AddScoped<IAuthenticationRepository>(provider =>
+    new AuthenticationRepository(connectionString, provider.GetRequiredService<EmailSender>()));
 
 var app = builder.Build();
 

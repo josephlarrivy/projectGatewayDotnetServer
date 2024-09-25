@@ -1,15 +1,18 @@
 using DotnetServer.Models;
 using Npgsql;
 using Dapper;
+using DotnetServer.Services;
 
 namespace DotnetServer.Repositories;
 public class AuthenticationRepository : IAuthenticationRepository
 {
     private readonly string _connectionString;
+    private EmailSender _emailSender;
 
-    public AuthenticationRepository(string connectionString)
+    public AuthenticationRepository(string connectionString, EmailSender emailSender)
     {
         _connectionString = connectionString;
+        _emailSender = emailSender;
     }
 
     public async Task<UserModel?> GetUserByIdAsync(int id)
@@ -56,11 +59,14 @@ public class AuthenticationRepository : IAuthenticationRepository
                 CreatedAt = createdAt
             });
 
+            _emailSender.SendEmail(email, loginCode);
+
+
             // Return the generated login code
             return new ReturnLoginCodeModel
             {
                 Email = email,
-                LoginCode = loginCode
+                // LoginCode = loginCode
             };
         }
     }
