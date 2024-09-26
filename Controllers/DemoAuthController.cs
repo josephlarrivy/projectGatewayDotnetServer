@@ -46,13 +46,36 @@ namespace DotnetServer.Controllers
             return Ok(user);
         }
 
+        [HttpPost("registerNewUser")]
+        public async Task<IActionResult> RegisterNewUser([FromBody] RegisterNewUserModel userModel)
+        {
+            try
+            {
+                var result = await _authenticationRepository.RegisterNewUserAsync(userModel.Email, userModel.Password, userModel.FirstName, userModel.LastName);
+
+                if (result == null)
+                {
+                    return BadRequest("Failed to register the user.");
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+
+
+
         // demo setup to make Repo method route works
         // this is not an actual route and will be removed
         [HttpGet("testLoginCode/{email}")]
         public async Task<IActionResult> TestLoginCode(string email)
         {
             // Call the GenerateAndReturnLoginCode method from your repository
-            var code = await _authenticationRepository.GenerateAndReturnLoginCode(email);
+            var code = await _authenticationRepository.GenerateAndReturnLoginCodeAsync(email);
 
             // If the code is null (e.g., email not found), return a NotFound result
             if (code == null)

@@ -21,7 +21,8 @@ CREATE TABLE Users (
     Id SERIAL PRIMARY KEY,
     Email VARCHAR(255) NOT NULL UNIQUE,
     HashedPassword VARCHAR(255),
-    Name VARCHAR(255),
+    FirstName VARCHAR(255),
+    LastName VARCHAR(255),
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -34,9 +35,8 @@ CREATE TABLE LoginCodes (
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
 -- Insert some initial data into the Users table
 INSERT INTO users
-    (Email, HashedPassword, Name)
+    (Email, HashedPassword, FirstName, LastName)
     VALUES
-    ('joseph.larrivy@gmail.com','xxx', 'User One');
+    ('joseph.larrivy@gmail.com','xxx', 'Test', 'User');
