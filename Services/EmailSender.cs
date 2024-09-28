@@ -26,7 +26,7 @@ namespace DotnetServer.Services
         {
             // Create the email message
             var emailMessage = new MimeMessage();
-            string link = $"{_frontendUrl}/login?code={code}";
+            string link = $"{_frontendUrl}/enterLoginCode/{code}";
             emailMessage.From.Add(new MimeKit.MailboxAddress("", _fromEmail));
             emailMessage.To.Add(new MimeKit.MailboxAddress("", recipientEmail));
             emailMessage.Subject = "Temporary Login Code";

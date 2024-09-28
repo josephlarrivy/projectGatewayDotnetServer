@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DotnetServer.Models;
 using DotnetServer.Repositories;
 using Npgsql;
+using DotnetServer.Services;
 
 namespace DotnetServer.Controllers
 {
@@ -60,7 +61,7 @@ namespace DotnetServer.Controllers
                 if (isValid == true)
                 {
                     Console.WriteLine("Code verified successfully");
-                    return Ok(new { Message = "Code verified successfully" });
+                    return Ok(new { Message = "Code verified successfully", token = "xxx"  });
                 }
                 else
                 {
