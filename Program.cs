@@ -38,6 +38,9 @@ builder.Services.AddScoped(provider =>
 
 // Register the AuthenticationRepository and inject the EmailSender
 var connectionString = $"Host={host};Database={dbName};Username={dbUser};Password={dbPassword}";
+
+builder.Services.AddScoped<IDemoAuthRepository>(provider =>
+    new DemoAuthRepository(connectionString, provider.GetRequiredService<EmailSender>()));
 builder.Services.AddScoped<IAuthenticationRepository>(provider =>
     new AuthenticationRepository(connectionString, provider.GetRequiredService<EmailSender>()));
 

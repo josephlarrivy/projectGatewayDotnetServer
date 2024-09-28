@@ -9,10 +9,10 @@ namespace DotnetServer.Controllers
     [Route("demo")]
     public class DemoAuthController : ControllerBase
     {
-        private readonly IAuthenticationRepository _authenticationRepository;
+        private readonly IDemoAuthRepository _authenticationRepository;
 
         // Inject the repository via the constructor
-        public DemoAuthController(IAuthenticationRepository authenticationRepository)
+        public DemoAuthController(IDemoAuthRepository authenticationRepository)
         {
             _authenticationRepository = authenticationRepository;
         }

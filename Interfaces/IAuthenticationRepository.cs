@@ -2,7 +2,7 @@ using DotnetServer.Models;
 
 public interface IAuthenticationRepository
 {
-    Task<UserModel> GetUserByIdAsync(int id);
-    Task<ReturnLoginCodeModel> GenerateAndReturnLoginCodeAsync(string email);
     Task<RegisterNewUserResultModel> RegisterNewUserAsync(string email, string password, string firstName, string lastName);
+    Task<ReturnLoginCodeModel> GenerateAndReturnLoginCodeAsync(string email, string codeType);
+    Task<bool> VerifyLoginCodeAsync(string code);
 }

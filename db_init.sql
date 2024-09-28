@@ -30,13 +30,16 @@ CREATE TABLE LoginCodes (
     Id SERIAL PRIMARY KEY,
     Email VARCHAR(255) NOT NULL REFERENCES Users(Email) ON DELETE CASCADE,
     Code VARCHAR(8) NOT NULL,
+    CodeType VARCHAR(8) NOT NULL,
     IsUsed BOOLEAN DEFAULT FALSE,
     ExpiresAt TIMESTAMP NOT NULL,
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+
 -- Insert some initial data into the Users table
 INSERT INTO users
     (Email, HashedPassword, FirstName, LastName)
     VALUES
-    ('joseph.larrivy@gmail.com','xxx', 'Test', 'User');
+    ('test@test.com','xxx', 'Test', 'User');
