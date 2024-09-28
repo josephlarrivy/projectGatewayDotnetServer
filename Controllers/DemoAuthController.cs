@@ -46,6 +46,7 @@ namespace DotnetServer.Controllers
             return Ok(user);
         }
 
+        // regusters a new user
         [HttpPost("registerNewUser")]
         public async Task<IActionResult> RegisterNewUser([FromBody] RegisterNewUserModel userModel)
         {
@@ -65,9 +66,6 @@ namespace DotnetServer.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
-
-
-
 
         // demo setup to make Repo method route works
         // this is not an actual route and will be removed

@@ -23,7 +23,7 @@ var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER");
 var smtpPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
 var smtpFromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL");
 
-
+var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,7 +34,7 @@ builder.Services.AddSwaggerGen();
 
 // Register EmailSender and pass configuration from .env
 builder.Services.AddScoped(provider =>
-    new EmailSender(smtpServer, smtpPort, smtpUser, smtpPassword, smtpFromEmail));
+    new EmailSender(smtpServer, smtpPort, smtpUser, smtpPassword, smtpFromEmail, frontendUrl));
 
 // Register the AuthenticationRepository and inject the EmailSender
 var connectionString = $"Host={host};Database={dbName};Username={dbUser};Password={dbPassword}";
