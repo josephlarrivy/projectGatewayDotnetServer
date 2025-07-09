@@ -64,7 +64,7 @@ namespace DotnetServer.Repositories
                     CreatedAt = createdAt
                 });
 
-                _emailSender.SendEmail(email, loginCode);
+                _emailSender.SendLoginCodeEmail(email, loginCode);
 
 
                 // Return the generated login code

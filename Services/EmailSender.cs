@@ -22,11 +22,11 @@ namespace DotnetServer.Services
             _fromEmail = fromEmail;
             _frontendUrl = frontendUrl;
         }
-        public void SendEmail(string recipientEmail, string code)
+        public void SendLoginCodeEmail(string recipientEmail, string code)
         {
             // Create the email message
             var emailMessage = new MimeMessage();
-            string link = $"{_frontendUrl}/enterLoginCode/{code}";
+            string link = $"{_frontendUrl}/enterLoginCode/{recipientEmail}/{code}";
             emailMessage.From.Add(new MimeKit.MailboxAddress("", _fromEmail));
             emailMessage.To.Add(new MimeKit.MailboxAddress("", recipientEmail));
             emailMessage.Subject = "Temporary Login Code";

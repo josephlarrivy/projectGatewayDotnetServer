@@ -51,12 +51,12 @@ namespace DotnetServer.Controllers
         }
 
         [HttpGet("checkLoginCode")]
-        public async Task<IActionResult> CheckLoginCode([FromQuery] string code)
+        public async Task<IActionResult> CheckLoginCode([FromQuery] string email, [FromQuery] string code)
         {
             try
             {
                 // Verify the login code
-                bool isValid = await _authenticationRepository.VerifyLoginCodeAsync(code);
+                bool isValid = await _authenticationRepository.VerifyLoginCodeAsync(email, code);
 
                 if (isValid == true)
                 {
@@ -66,7 +66,7 @@ namespace DotnetServer.Controllers
                 else
                 {
                     // Using 403 Forbidden for invalid or expired code
-                    return StatusCode(403, new { Message = "Invalid or expired code." });
+                    return StatusCode(403, new { Message = "Invalid or expired email and code combination." });
 
                     // Alternatively, you could use 410 Gone
                     // return StatusCode(410, new { Message = "The provided code is no longer valid." });

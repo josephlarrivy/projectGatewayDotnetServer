@@ -125,7 +125,7 @@ namespace DotnetServer.Repositories
                     CreatedAt = createdAt
                 });
 
-                _emailSender.SendEmail(email, loginCode);
+                _emailSender.SendLoginCodeEmail(email, loginCode);
 
 
                 // Return the generated login code
@@ -138,7 +138,7 @@ namespace DotnetServer.Repositories
         }
 
         // verify the login code exists and is still valid
-        public async Task<bool> VerifyLoginCodeAsync(string code)
+        public async Task<bool> VerifyLoginCodeAsync(string email, string code)
         {
             try
             {
@@ -147,24 +147,29 @@ namespace DotnetServer.Repositories
                     await connection.OpenAsync();
 
                     // Check if the code exists and has not expired
-                    var sql = @"SELECT Id FROM LoginCodes WHERE Code = @Code AND ExpiresAt > NOW() AND IsUsed = FALSE";
+                    var sql = @"SELECT Id FROM LoginCodes WHERE Code = @Code And Email = @Email AND ExpiresAt > NOW() AND IsUsed = FALSE";
 
                     // Log the SQL query and parameters for debugging
-                    Console.WriteLine($"Executing SQL: {sql} with parameters: Code={code}");
+                    Console.WriteLine($"Executing SQL: {sql} with parameters: Email={email} Code={code}");
 
-                    var result = await connection.QuerySingleOrDefaultAsync<dynamic>(sql, new { Code = code });
+                    var result = await connection.QuerySingleOrDefaultAsync<dynamic>(sql, new { Code = code, Email = email });
 
                     if (result != null)
                     {
                         // Code is valid; mark it as used
                         var setToUsedCodeSql = @"UPDATE LoginCodes SET IsUsed = TRUE WHERE Code = @Code";
                         await connection.ExecuteAsync(setToUsedCodeSql, new { Code = code });
-
                         Console.WriteLine($"Login code {code} is valid and marked as used.");
+
+                        // Code is valid; mark user as verified
+                        var setToVerifiedSql = @"UPDATE Users SET IsVerifiedByLoginCode = TRUE WHERE Email = @Email";
+                        await connection.ExecuteAsync(setToVerifiedSql, new { Email = email });
+                        Console.WriteLine($"User with email {email} marked as verified.");
+
                         return true;
                     }
 
-                    Console.WriteLine($"Login code {code} is not valid or has expired.");
+                    Console.WriteLine($"Login code {code} and {email} combination is not valid or has expired.");
                     return false;
                 }
             }

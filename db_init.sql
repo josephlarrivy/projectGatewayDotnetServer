@@ -13,8 +13,8 @@ CREATE DATABASE gatewayprojectdotnetdatabase;
 -- Switch to the newly created database
 \c gatewayprojectdotnetdatabase
 
--- Drop the Users table if it exists
-DROP TABLE IF EXISTS users;
+
+
 
 -- Create the Users table
 CREATE TABLE Users (
@@ -23,7 +23,8 @@ CREATE TABLE Users (
     HashedPassword VARCHAR(255),
     FirstName VARCHAR(255),
     LastName VARCHAR(255),
-    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    IsVerifiedByLoginCode BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE LoginCodes (
@@ -38,8 +39,8 @@ CREATE TABLE LoginCodes (
 
 
 
--- Insert some initial data into the Users table
-INSERT INTO users
-    (Email, HashedPassword, FirstName, LastName)
-    VALUES
-    ('test@test.com','xxx', 'Test', 'User');
+-- -- Insert some initial data into the Users table
+-- INSERT INTO Users
+--     (Email, HashedPassword, FirstName, LastName)
+--     VALUES
+--     ('test@test.com', 'xxx', 'Test', 'User');
