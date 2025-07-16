@@ -30,6 +30,36 @@ namespace DotnetServer.Repositories
             }
         }
 
+        // Helper function to generate user ids
+        private async Task<string> GenerateNewUserIdAsync()
+        {
+            string GenerateRandomUserId()
+            {
+                var random = new Random();
+                const string chars = "23456789abcdefghijkmnpqrstuvwxyz";
+                return new string(Enumerable.Repeat(chars, 12)
+                    .Select(s => s[random.Next(s.Length)]).ToArray());
+            }
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                while (true)
+                {
+                    string newId = GenerateRandomUserId();
+                    var sql = "SELECT 1 FROM Users WHERE id = @NewId";
+                    var existing = await connection.QuerySingleOrDefaultAsync<int?>(sql, new { NewId = newId });
+
+                    if (existing == null) // ID is unique
+                    {
+                        return newId;
+                    }
+                }
+            }
+        }
+
+
         // Register new user with hashed password
         public async Task<RegisterNewUserResultModel> RegisterNewUserAsync(string email, string password, string firstName, string lastName)
         {
@@ -56,12 +86,14 @@ namespace DotnetServer.Repositories
 
                     // Hash the password using PasswordHasher<object>
                     var hashedPassword = _passwordHasher.HashPassword(dummyUser, password);
+                    var newId = await GenerateNewUserIdAsync();
 
-                    var sql = @"INSERT INTO Users (Email, HashedPassword, FirstName, LastName, CreatedAt)
-                        VALUES (@Email, @HashedPassword, @FirstName, @LastName, @CreatedAt)";
+                    var sql = @"INSERT INTO Users (Id, Email, HashedPassword, FirstName, LastName, CreatedAt)
+                        VALUES (@Id, @Email, @HashedPassword, @FirstName, @LastName, @CreatedAt)";
 
                     await connection.ExecuteAsync(sql, new
                     {
+                        Id = newId,
                         Email = email,
                         HashedPassword = hashedPassword,
                         FirstName = firstName,
@@ -92,7 +124,7 @@ namespace DotnetServer.Repositories
 
 
         // Helper function to generate a random code
-        private string GenerateRandomCode()
+        private string GenerateLoginCode()
         {
             var random = new Random();
             // const string chars = "abcdefghijklmnopqrstuvwxyz123456789";
@@ -106,7 +138,7 @@ namespace DotnetServer.Repositories
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                var loginCode = GenerateRandomCode();
+                var loginCode = GenerateLoginCode();
                 var expiresAt = DateTime.Now.AddMinutes(5);
                 var createdAt = DateTime.Now;
 
@@ -186,6 +218,58 @@ namespace DotnetServer.Repositories
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return false;
+            }
+        }
+
+
+
+
+        // Authenticate User
+        public async Task<AuthenticationResultModel> AuthenticateAsync(string email, string password)
+        {
+            try
+            {
+                var existingUser = await GetUserByEmailAsync(email);
+                if (existingUser == null)
+                {
+                    return new AuthenticationResultModel
+                    {
+                        IsSuccess = false
+                    };
+                }
+
+                // Use a dummy object for hashing context
+                var dummyUser = new object();
+
+                var result = _passwordHasher.VerifyHashedPassword(dummyUser, existingUser.HashedPassword, password);
+
+                if (result == PasswordVerificationResult.Success)
+                {
+                    return new AuthenticationResultModel
+                    {
+                        Id = existingUser.Id,
+                        IsSuccess = true,
+                        Email = existingUser.Email,
+                        FirstName = existingUser.FirstName,
+                        LastName = existingUser.LastName,
+                        IsVerifiedByLoginCode = existingUser.IsVerifiedByLoginCode
+                    };
+                }
+
+                return new AuthenticationResultModel
+                {
+                    IsSuccess = false
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+
+                return new AuthenticationResultModel
+                {
+                    IsSuccess = false
+                };
             }
         }
 

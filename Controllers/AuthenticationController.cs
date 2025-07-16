@@ -12,14 +12,15 @@ namespace DotnetServer.Controllers
     public class AuthenticationController : ControllerBase
     {
         private readonly IAuthenticationRepository _authenticationRepository;
+        private readonly TokenGenerator _tokenGenerator;
 
-        // Inject the repository via the constructor
-        public AuthenticationController(IAuthenticationRepository authenticationRepository)
+        public AuthenticationController(IAuthenticationRepository authenticationRepository, TokenGenerator tokenGenerator)
         {
             _authenticationRepository = authenticationRepository;
+            _tokenGenerator = tokenGenerator;
         }
 
-        // regusters a new user
+        // registers a new user
         [HttpPost("registerNewUser")]
         public async Task<IActionResult> RegisterNewUser([FromBody] RegisterNewUserModel userModel)
         {
@@ -50,6 +51,7 @@ namespace DotnetServer.Controllers
             }
         }
 
+        //checks that login code matches, is not used, and is still valid
         [HttpGet("checkLoginCode")]
         public async Task<IActionResult> CheckLoginCode([FromQuery] string email, [FromQuery] string code)
         {
@@ -85,6 +87,53 @@ namespace DotnetServer.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+
+
+
+
+        // regusters a new user
+        [HttpPost("authenticate")]
+        public async Task<IActionResult> Authenticate([FromBody] AuthenticateModel authenticationData)
+        {
+            try
+            {
+                // Attempt to authenticate the user
+                var result = await _authenticationRepository.AuthenticateAsync(
+                    authenticationData.Email, authenticationData.Password
+                );
+
+                if (result.IsSuccess == false)
+                {
+                    return Unauthorized(
+                        new { Message = "Invalid email or password." }
+                    ); // Return 401
+                }
+
+                if (result.IsVerifiedByLoginCode == false)
+                {
+                    return Unauthorized(
+                        new { Message = "User email address not yet verified." }
+                    ); // Return 401
+                }
+
+                string token = _tokenGenerator.GenerateToken(
+                    result.Id,
+                    result.Email,
+                    result.FirstName,
+                    result.LastName
+                );
+
+                return Ok(new { token });
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
 
 
 

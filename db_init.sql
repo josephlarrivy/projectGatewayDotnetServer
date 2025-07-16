@@ -18,7 +18,7 @@ CREATE DATABASE gatewayprojectdotnetdatabase;
 
 -- Create the Users table
 CREATE TABLE Users (
-    Id SERIAL PRIMARY KEY,
+    Id VARCHAR(12),
     Email VARCHAR(255) NOT NULL UNIQUE,
     HashedPassword VARCHAR(255),
     FirstName VARCHAR(255),
@@ -36,11 +36,3 @@ CREATE TABLE LoginCodes (
     ExpiresAt TIMESTAMP NOT NULL,
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
-
--- -- Insert some initial data into the Users table
--- INSERT INTO Users
---     (Email, HashedPassword, FirstName, LastName)
---     VALUES
---     ('test@test.com', 'xxx', 'Test', 'User');

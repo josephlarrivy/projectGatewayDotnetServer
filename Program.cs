@@ -6,6 +6,7 @@ using Dapper;
 using DotNetEnv;
 using DotnetServer.Repositories;
 using DotnetServer.Services;
+using DotnetServer.Controllers;
 
 // Load the environment to get variables
 Env.Load();
@@ -23,6 +24,10 @@ var smtpUser = Environment.GetEnvironmentVariable("SMTP_USER");
 var smtpPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD");
 var smtpFromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL");
 
+// Fetch JSON Web Token from environment variables
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+
+// Fetch the fronted url from environment variables
 var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
 
 
@@ -36,13 +41,25 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped(provider =>
     new EmailSender(smtpServer, smtpPort, smtpUser, smtpPassword, smtpFromEmail, frontendUrl));
 
+// Register TokenGenerator and pass configuration from .env
+builder.Services.AddScoped(provider =>
+    new TokenGenerator(jwtSecret, 432000));
+
 // Register the AuthenticationRepository and inject the EmailSender
 var connectionString = $"Host={host};Database={dbName};Username={dbUser};Password={dbPassword}";
 
 builder.Services.AddScoped<IDemoAuthRepository>(provider =>
-    new DemoAuthRepository(connectionString, provider.GetRequiredService<EmailSender>()));
+    new DemoAuthRepository(
+        connectionString,
+        provider.GetRequiredService<EmailSender>()
+    ));
+
 builder.Services.AddScoped<IAuthenticationRepository>(provider =>
-    new AuthenticationRepository(connectionString, provider.GetRequiredService<EmailSender>()));
+    new AuthenticationRepository(
+        connectionString,
+        provider.GetRequiredService<EmailSender>()
+    ));
+
 
 var app = builder.Build();
 

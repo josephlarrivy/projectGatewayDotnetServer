@@ -25,8 +25,6 @@ namespace DotnetServer.Middleware
             Console.WriteLine("########## Start DotNet Request ##########");
             Console.WriteLine($"{centralTime}");
             Console.WriteLine($"HTTP {context.Request.Method} {context.Request.Path}{context.Request.QueryString}");
-            Console.WriteLine("########### End DotNet Request ###########");
-            Console.WriteLine(" ");
 
             // Log the request body if it's not empty
             if (context.Request.ContentLength > 0)
@@ -37,6 +35,9 @@ namespace DotnetServer.Middleware
                 Console.WriteLine($"Request Body: {requestBody}");
                 context.Request.Body.Position = 0; // Reset the stream position for further processing
             }
+
+            Console.WriteLine("########### End DotNet Request ###########");
+            Console.WriteLine(" ");
 
             // Call the next middleware in the pipeline
             await _next(context);

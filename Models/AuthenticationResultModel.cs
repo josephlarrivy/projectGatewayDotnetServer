@@ -1,13 +1,12 @@
 namespace DotnetServer.Models
 {
-    public class UserModel
+    public class AuthenticationResultModel
     {
+        public bool? IsSuccess { get; set; }
         public string? Id { get; set; }
         public string? Email { get; set; }
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
-        public string? HashedPassword { get; set; }
         public bool? IsVerifiedByLoginCode { get; set; }
-        public DateTime? CreatedAt { get; set; }
     }
 }

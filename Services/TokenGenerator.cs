@@ -18,7 +18,7 @@ namespace DotnetServer.Services
             _jwtLifespan = jwtLifespan;
         }
 
-        public string GenerateToken(int id, string email, string firstName, string lastName)
+        public string GenerateToken(string? id, string? email, string? firstName, string? lastName)
         {
             // Define the token handler
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -27,9 +27,9 @@ namespace DotnetServer.Services
             // Create claims
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, id.ToString()),
-                new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.GivenName, $"{firstName} {lastName}"),
+                new Claim("id", id.ToString()),
+                new Claim("email", email),
+                new Claim("name", $"{firstName} {lastName}")
             };
 
             // Define token descriptor
