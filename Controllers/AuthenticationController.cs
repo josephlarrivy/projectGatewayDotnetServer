@@ -35,7 +35,7 @@ namespace DotnetServer.Controllers
                 }
 
                 // Call the GenerateAndReturnLoginCode method from your repository
-                var code = await _authenticationRepository.GenerateAndReturnLoginCodeAsync(userModel.Email, "register");
+                var code = await _authenticationRepository.GenerateAndReturnVerificationCodeAsync(userModel.Email, "register");
 
                 if (code == null)
                 {
@@ -52,38 +52,36 @@ namespace DotnetServer.Controllers
         }
 
         //checks that login code matches, is not used, and is still valid
-        [HttpGet("checkLoginCode")]
-        public async Task<IActionResult> CheckLoginCode([FromQuery] string email, [FromQuery] string code)
+        [HttpGet("checkVerificationCode")]
+        public async Task<IActionResult> CheckVerificationCode([FromQuery] string email, [FromQuery] string code)
         {
             try
             {
                 // Verify the login code
-                bool isValid = await _authenticationRepository.VerifyLoginCodeAsync(email, code);
+                bool isValid = await _authenticationRepository.VerifyVerificationCodeAsync(email, code);
 
                 if (isValid == true)
                 {
-                    Console.WriteLine("Code verified successfully");
-                    return Ok(new { Message = "Code verified successfully", token = "xxx"  });
+                    // Console.WriteLine("Code verified successfully");
+                    return Ok("Code verified successfully.");
                 }
                 else
                 {
                     // Using 403 Forbidden for invalid or expired code
                     return StatusCode(403, new { Message = "Invalid or expired email and code combination." });
 
-                    // Alternatively, you could use 410 Gone
-                    // return StatusCode(410, new { Message = "The provided code is no longer valid." });
                 }
             }
             catch (NpgsqlException ex)
             {
                 // Log database-related exceptions
-                Console.WriteLine($"Database error occurred: {ex.Message}");
+                // Console.WriteLine($"Database error occurred: {ex.Message}");
                 return StatusCode(500, "Database error occurred.");
             }
             catch (Exception ex)
             {
                 // Log general exceptions
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                // Console.WriteLine($"An error occurred: {ex.Message}");
                 return StatusCode(500, "Internal server error");
             }
         }
@@ -129,7 +127,7 @@ namespace DotnetServer.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                // Console.WriteLine(ex.Message);
                 return StatusCode(500, "Internal server error");
             }
         }

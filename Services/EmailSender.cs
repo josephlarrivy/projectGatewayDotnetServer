@@ -26,10 +26,10 @@ namespace DotnetServer.Services
         {
             // Create the email message
             var emailMessage = new MimeMessage();
-            string link = $"{_frontendUrl}/enterLoginCode/{recipientEmail}/{code}";
+            string link = $"{_frontendUrl}/enterEmailVerificationCode/{recipientEmail}/{code}";
             emailMessage.From.Add(new MimeKit.MailboxAddress("", _fromEmail));
             emailMessage.To.Add(new MimeKit.MailboxAddress("", recipientEmail));
-            emailMessage.Subject = "Temporary Login Code";
+            emailMessage.Subject = "Email Verification Code";
 
             var htmlBody = string.Format(@"
                 <html>
@@ -57,10 +57,10 @@ namespace DotnetServer.Services
                     </style>
                 </head>
                 <body>
-                    <p class=""first"">Your temporary login code is <b>{0}</b></p>
-                    <p class=""second"">You are receiving this email because you have asked to sign-in with a temporary login code.</p>
+                    <p class=""first"">Your email verification code is <b>{0}</b></p>
+                    <p class=""second"">You are receiving this email because you need to verify your email address before you can access your account.</p>
                     <p class=""third"">This code will expire in 5 minutes.</p>
-                    <a href=""{1}"" class=""button"">Click Here to Sign In</a>
+                    <a href=""{1}"" class=""button"">Click Here to Verify Your Email Address</a>
                 </body>
                 </html>", code, link
             );

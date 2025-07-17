@@ -37,6 +37,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// CORS setup
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.WithOrigins(frontendUrl)
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
+
+
 // Register EmailSender and pass configuration from .env
 builder.Services.AddScoped(provider =>
     new EmailSender(smtpServer, smtpPort, smtpUser, smtpPassword, smtpFromEmail, frontendUrl));
@@ -63,6 +75,8 @@ builder.Services.AddScoped<IAuthenticationRepository>(provider =>
 
 var app = builder.Build();
 
+
+app.UseCors();
 
 
 

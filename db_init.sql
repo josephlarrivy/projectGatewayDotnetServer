@@ -15,11 +15,11 @@ CREATE DATABASE gatewayprojectdotnetdatabase;
 
 
 
-
 -- Create the Users table
 CREATE TABLE Users (
     Id VARCHAR(12),
     Email VARCHAR(255) NOT NULL UNIQUE,
+    NormalizedEmail VARCHAR(255) NOT NULL UNIQUE,
     HashedPassword VARCHAR(255),
     FirstName VARCHAR(255),
     LastName VARCHAR(255),
@@ -27,12 +27,21 @@ CREATE TABLE Users (
     IsVerifiedByLoginCode BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE LoginCodes (
+CREATE TABLE VerificationCodes (
     Id SERIAL PRIMARY KEY,
-    Email VARCHAR(255) NOT NULL REFERENCES Users(Email) ON DELETE CASCADE,
+    NormalizedEmail VARCHAR(255) NOT NULL REFERENCES Users(NormalizedEmail) ON DELETE CASCADE,
     Code VARCHAR(8) NOT NULL,
     CodeType VARCHAR(8) NOT NULL,
     IsUsed BOOLEAN DEFAULT FALSE,
     ExpiresAt TIMESTAMP NOT NULL,
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE UnsuccessfulLoginAttempts (
+    Id SERIAL PRIMARY KEY,
+    NormalizedEmail VARCHAR(255) NOT NULL,
+    AttemptedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    IpAddress VARCHAR(45) DEFAULT NULL,
+    UserAgent TEXT DEFAULT NULL,
+    Reason TEXT DEFAULT NULL
 );

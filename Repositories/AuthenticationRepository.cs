@@ -3,6 +3,7 @@ using Npgsql;
 using Dapper;
 using DotnetServer.Services;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 namespace DotnetServer.Repositories
 {
@@ -24,7 +25,8 @@ namespace DotnetServer.Repositories
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                var sql = "SELECT * FROM Users WHERE Email = @Email";
+                email = email.Trim().ToLower();
+                var sql = "SELECT * FROM Users WHERE NormalizedEmail = @Email";
                 var user = await connection.QuerySingleOrDefaultAsync<UserModel?>(sql, new { Email = email });
                 return user;
             }
@@ -35,10 +37,24 @@ namespace DotnetServer.Repositories
         {
             string GenerateRandomUserId()
             {
-                var random = new Random();
-                const string chars = "23456789abcdefghijkmnpqrstuvwxyz";
-                return new string(Enumerable.Repeat(chars, 12)
-                    .Select(s => s[random.Next(s.Length)]).ToArray());
+                // var random = new Random();
+                // const string chars = "23456789abcdefghijkmnpqrstuvwxyz";
+                // return new string(Enumerable.Repeat(chars, 12)
+                //     .Select(s => s[random.Next(s.Length)]).ToArray());
+
+                const string chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ123456789";
+                var bytes = new byte[12];
+                var result = new char[12];
+
+                RandomNumberGenerator.Fill(bytes);
+
+                for (int i = 0; i < 12; i++)
+                {
+                    var idx = bytes[i] % chars.Length;
+                    result[i] = chars[idx];
+                }
+
+                return new string(result);
             }
 
             using (var connection = new NpgsqlConnection(_connectionString))
@@ -88,13 +104,17 @@ namespace DotnetServer.Repositories
                     var hashedPassword = _passwordHasher.HashPassword(dummyUser, password);
                     var newId = await GenerateNewUserIdAsync();
 
-                    var sql = @"INSERT INTO Users (Id, Email, HashedPassword, FirstName, LastName, CreatedAt)
-                        VALUES (@Id, @Email, @HashedPassword, @FirstName, @LastName, @CreatedAt)";
+                    var sql = @"
+                        INSERT INTO Users
+                            (Id, Email, NormalizedEmail, HashedPassword, FirstName, LastName, CreatedAt)
+                        VALUES
+                            (@Id, @Email, @NormalizedEmail, @HashedPassword, @FirstName, @LastName, @CreatedAt)";
 
                     await connection.ExecuteAsync(sql, new
                     {
                         Id = newId,
                         Email = email,
+                        NormalizedEmail = email.Trim().ToLower(),
                         HashedPassword = hashedPassword,
                         FirstName = firstName,
                         LastName = lastName,
@@ -122,35 +142,36 @@ namespace DotnetServer.Repositories
         }
 
 
-
         // Helper function to generate a random code
-        private string GenerateLoginCode()
+        private string GenerateVerificationCode()
         {
-            var random = new Random();
-            // const string chars = "abcdefghijklmnopqrstuvwxyz123456789";
-            const string chars = "0123456789";
-            return new string(Enumerable.Repeat(chars, 6)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
+            var bytes = RandomNumberGenerator.GetBytes(6);
+            var digits = bytes.Select(b => (char)('0' + (b % 10)));
+            return new string(digits.Take(6).ToArray());
         }
 
         // Method to generate login code given an email, this will me eamiled to a user from the express app and they will be ablee to us it to log in
-        public async Task<ReturnLoginCodeModel?> GenerateAndReturnLoginCodeAsync(string email, string codeType)
+        public async Task<ReturnLoginCodeModel?> GenerateAndReturnVerificationCodeAsync(string email, string codeType)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                var loginCode = GenerateLoginCode();
+                var loginCode = GenerateVerificationCode();
                 var expiresAt = DateTime.Now.AddMinutes(5);
                 var createdAt = DateTime.Now;
 
                 await connection.OpenAsync();
 
-                var sql = @"INSERT INTO LoginCodes (Email, Code, CodeType, ExpiresAt, CreatedAt)
-                    VALUES (@Email, @Code, @CodeType, @ExpiresAt, @CreatedAt)";
+                var sql = @"
+                    INSERT INTO VerificationCodes
+                        (NormalizedEmail, Code, CodeType, ExpiresAt, CreatedAt)
+                    VALUES 
+                        (@NormalizedEmail, @Code, @CodeType, @ExpiresAt, @CreatedAt)
+                    ";
 
                 // Execute the Insert query using Dapper
                 await connection.ExecuteAsync(sql, new
                 {
-                    Email = email,
+                    NormalizedEmail = email.Trim().ToLower(),
                     Code = loginCode,
                     CodeType = codeType,
                     ExpiresAt = expiresAt,
@@ -170,7 +191,7 @@ namespace DotnetServer.Repositories
         }
 
         // verify the login code exists and is still valid
-        public async Task<bool> VerifyLoginCodeAsync(string email, string code)
+        public async Task<bool> VerifyVerificationCodeAsync(string email, string code)
         {
             try
             {
@@ -179,44 +200,47 @@ namespace DotnetServer.Repositories
                     await connection.OpenAsync();
 
                     // Check if the code exists and has not expired
-                    var sql = @"SELECT Id FROM LoginCodes WHERE Code = @Code And Email = @Email AND ExpiresAt > NOW() AND IsUsed = FALSE";
+                    var sql = @"SELECT Id FROM VerificationCodes WHERE Code = @Code And NormalizedEmail = @NormalizedEmail AND ExpiresAt > NOW() AND IsUsed = FALSE";
 
                     // Log the SQL query and parameters for debugging
-                    Console.WriteLine($"Executing SQL: {sql} with parameters: Email={email} Code={code}");
+                    // Console.WriteLine($"Executing SQL: {sql} with parameters: Email={email} Code={code}");
 
-                    var result = await connection.QuerySingleOrDefaultAsync<dynamic>(sql, new { Code = code, Email = email });
+                    var result = await connection.QuerySingleOrDefaultAsync<dynamic>(sql, new { Code = code, NormalizedEmail = email.Trim().ToLower() });
 
                     if (result != null)
                     {
                         // Code is valid; mark it as used
-                        var setToUsedCodeSql = @"UPDATE LoginCodes SET IsUsed = TRUE WHERE Code = @Code";
+                        var setToUsedCodeSql = @"UPDATE VerificationCodes SET IsUsed = TRUE WHERE Code = @Code";
                         await connection.ExecuteAsync(setToUsedCodeSql, new { Code = code });
-                        Console.WriteLine($"Login code {code} is valid and marked as used.");
+                        // Console.WriteLine($"Login code {code} is valid and marked as used.");
 
                         // Code is valid; mark user as verified
-                        var setToVerifiedSql = @"UPDATE Users SET IsVerifiedByLoginCode = TRUE WHERE Email = @Email";
-                        await connection.ExecuteAsync(setToVerifiedSql, new { Email = email });
-                        Console.WriteLine($"User with email {email} marked as verified.");
+                        // var setToVerifiedSql = @"UPDATE Users SET IsVerifiedByLoginCode = TRUE WHERE Email = @Email";
+                        // await connection.ExecuteAsync(setToVerifiedSql, new { Email = email });
+
+                        var setToVerifiedSql = @"UPDATE Users SET IsVerifiedByLoginCode = TRUE WHERE NormalizedEmail = @NormalizedEmail";
+                        await connection.ExecuteAsync(setToVerifiedSql, new { NormalizedEmail = email.Trim().ToLower() });
+                        // Console.WriteLine($"User with email {email} marked as verified.");
 
                         return true;
                     }
 
-                    Console.WriteLine($"Login code {code} and {email} combination is not valid or has expired.");
+                    // Console.WriteLine($"Login code {code} and {email} combination is not valid or has expired.");
                     return false;
                 }
             }
             catch (NpgsqlException ex)
             {
                 // Log database-related exceptions
-                Console.WriteLine($"Database error occurred: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                // Console.WriteLine($"Database error occurred: {ex.Message}");
+                // Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return false;
             }
             catch (Exception ex)
             {
                 // Log general exceptions
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                // Console.WriteLine($"An error occurred: {ex.Message}");
+                // Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -232,19 +256,20 @@ namespace DotnetServer.Repositories
                 var existingUser = await GetUserByEmailAsync(email);
                 if (existingUser == null)
                 {
-                    return new AuthenticationResultModel
-                    {
-                        IsSuccess = false
-                    };
+                    await RecordUnsuccessfulLoginAttempts(email, "User with submitted email address not found.");
+                    return new AuthenticationResultModel { IsSuccess = false };
                 }
 
-                // Use a dummy object for hashing context
                 var dummyUser = new object();
-
                 var result = _passwordHasher.VerifyHashedPassword(dummyUser, existingUser.HashedPassword, password);
 
                 if (result == PasswordVerificationResult.Success)
                 {
+
+                    if (existingUser.IsVerifiedByLoginCode == false) {
+                        await RecordUnsuccessfulLoginAttempts(email, "User has not yet verified their email address.");
+                    }
+
                     return new AuthenticationResultModel
                     {
                         Id = existingUser.Id,
@@ -256,22 +281,41 @@ namespace DotnetServer.Repositories
                     };
                 }
 
-                return new AuthenticationResultModel
-                {
-                    IsSuccess = false
-                };
+                await RecordUnsuccessfulLoginAttempts(email, "Submitted email and password do not match.");
+                return new AuthenticationResultModel { IsSuccess = false };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-
-                return new AuthenticationResultModel
-                {
-                    IsSuccess = false
-                };
+                return new AuthenticationResultModel { IsSuccess = false };
             }
         }
+
+
+        // Method to record unsuccessful authentication requests and reasons why unsuccessful
+        public async Task<bool> RecordUnsuccessfulLoginAttempts(string email, string reason)
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+                    INSERT INTO UnsuccessfulLoginAttempts
+                        (NormalizedEmail, Reason)
+                    VALUES
+                        (@NormalizedEmail, @Reason)
+                ";
+
+                await connection.ExecuteAsync(sql, new
+                {
+                    NormalizedEmail = email.Trim().ToLower(),
+                    Reason = reason
+                });
+
+                return true;
+            }
+        }
+
+
 
 
 
