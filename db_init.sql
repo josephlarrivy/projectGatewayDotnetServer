@@ -17,7 +17,7 @@ CREATE DATABASE gatewayprojectdotnetdatabase;
 
 -- Create the Users table
 CREATE TABLE Users (
-    Id VARCHAR(12),
+    Id VARCHAR(12) NOT NULL UNIQUE,
     Email VARCHAR(255) NOT NULL UNIQUE,
     NormalizedEmail VARCHAR(255) NOT NULL UNIQUE,
     HashedPassword VARCHAR(255),
@@ -44,4 +44,15 @@ CREATE TABLE UnsuccessfulLoginAttempts (
     IpAddress VARCHAR(45) DEFAULT NULL,
     UserAgent TEXT DEFAULT NULL,
     Reason TEXT DEFAULT NULL
+);
+
+CREATE TABLE ApiKeys (
+    Id SERIAL PRIMARY KEY,
+    UserId VARCHAR(255) NOT NULL REFERENCES Users(Id) ON DELETE CASCADE,
+    KeyName VARCHAR(255) NOT NULL,
+    HashedKey VARCHAR(255) NOT NULL,
+    ExpiresAt TIMESTAMP NOT NULL,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    IsDeactivated BOOLEAN DEFAULT FALSE,
+    IsPaused BOOLEAN DEFAULT FALSE
 );

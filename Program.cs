@@ -72,6 +72,11 @@ builder.Services.AddScoped<IAuthenticationRepository>(provider =>
         provider.GetRequiredService<EmailSender>()
     ));
 
+builder.Services.AddScoped<IApiKeysRepository>(provider =>
+    new ApiKeysRepository(
+        connectionString
+    ));
+
 
 var app = builder.Build();
 
